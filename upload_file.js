@@ -55,9 +55,4 @@ const finalize_res = await fetch(`${server}/v1/upload/finalize?token=${token}`, 
 
 const res = await finalize_res.text()
 
-try {
-    const { ref } = JSON.parse(res)
-    console.log(`${server}/v1/chunk/range/${ref}`)
-} catch(e) {
-    console.log(res)
-}
+console.log(res)

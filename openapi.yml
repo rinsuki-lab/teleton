@@ -103,11 +103,11 @@ paths:
                 properties:
                   ref:
                     type: string
-  /v1/chunk/{ref}/{offset}:
+  /v1/files/{ref}/chunks/{offset}:
     get:
-      tags: [chunk]
-      operationId: fetchChunkV1
-      summary: Acquire Chunk
+      tags: [file]
+      operationId: fetchFileChunkV1
+      summary: Acquire File Chunk
       parameters:
       - name: ref
         in: path
@@ -139,3 +139,30 @@ paths:
                 type: string
         429:
           description: "Upstream server hates your request rate"
+  /v1/files/{ref}/meta:
+    get:
+      tags: [file]
+      operationId: fetchFileMetaV1
+      parameters:
+      - name: ref
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Get Chunk Info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  file_size:
+                    type: number
+        409:
+          description: "Chunk reference is need to refresh"
+          headers:
+            X-New-Ref:
+              description: Refreshed chunk ref, for updating your database or something
+              schema:
+                type: string

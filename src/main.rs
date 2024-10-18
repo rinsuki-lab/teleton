@@ -39,8 +39,14 @@ async fn main() {
     };
     let app = {
         let client = client.clone();
-        app.route("/v1/chunk/:file_ref/:offset", get(|Path((file_ref, offset)): Path<(String, usize)>, headers: HeaderMap| async move {
-            handlers::chunk::get_chunk(&client, file_ref, offset).await
+        app.route("/v1/files/:file_ref/chunks/:offset", get(|Path((file_ref, offset)): Path<(String, usize)>, headers: HeaderMap| async move {
+            handlers::files::chunk::get_chunk(&client, file_ref, offset).await
+        }))
+    };
+    let app = {
+        let client = client.clone();
+        app.route("/v1/files/:file_ref/meta", get(|Path(file_ref): Path<String>, headers: HeaderMap| async move {
+            handlers::files::meta::get_file_meta(&client, file_ref).await
         }))
     };
 
