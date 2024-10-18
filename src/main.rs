@@ -1,4 +1,4 @@
-use axum::{body::{Body, Bytes}, extract::{Path, Query}, http::HeaderMap, response::Response, routing::{get, post}, Json};
+use axum::{body::Bytes, extract::{Path, Query}, http::HeaderMap, routing::{get, post}, Json};
 
 mod teleauth;
 mod handlers;
@@ -39,24 +39,8 @@ async fn main() {
     };
     let app = {
         let client = client.clone();
-        app.route("/v1/chunk/range/:file_ref", get(|Path(file_ref): Path<String>, headers: HeaderMap| async move {
-            let range_header = match headers.get("Range") {
-                Some(v) => match v.to_str() {
-                    Ok(v) => v,
-                    Err(e) => {
-                        println!("failed to parse range header {:?}", e);
-                        return Response::builder().status(400).body(Body::from("invalid range header")).unwrap();
-                    }
-                },
-                None => "",
-            };
-
-            let range_header = match range_header {
-                "" => None,
-                _ => Some(range_header.to_string()),
-            };
-
-            handlers::chunk::get_chunk_by_range_header(&client, file_ref, range_header).await
+        app.route("/v1/chunk/:file_ref/:offset", get(|Path((file_ref, offset)): Path<(String, usize)>, headers: HeaderMap| async move {
+            handlers::chunk::get_chunk(&client, file_ref, offset).await
         }))
     };
 

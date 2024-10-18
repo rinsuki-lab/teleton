@@ -1,9 +1,7 @@
 use axum::{body::Body, response::Response};
-use base64::Engine;
 use grammers_client::{Client, grammers_tl_types as tl};
-use prost::Message;
 
-use crate::proto::{FileRef, FileRefV1, UploadToken};
+use crate::{proto::UploadToken, shared::message_to_file_ref};
 
 #[derive(serde::Deserialize)]
 pub struct UploadFinalizeQueryParams {
@@ -125,52 +123,15 @@ pub async fn upload_finalize(query: UploadFinalizeQueryParams, body: UploadFinal
         }
     };
 
-    let doc = match &res.media {
-        None => {
-            println!("upstream doesn't contains media in message {:?}", res);
-            return Response::builder().status(500).body(Body::from("failed to call upstream api")).unwrap();
-        },
+    let file_ref = match message_to_file_ref(res) {
         Some(v) => v,
-    };
-    let doc = match doc {
-        tl::enums::MessageMedia::Document(d) => d,
-        _ => {
-            println!("upstream media isn't document {:?}", doc);
+        None => {
             return Response::builder().status(500).body(Body::from("failed to call upstream api")).unwrap();
         }
     };
-    let doc = match &doc.document {
-        Some(v) => v,
-        None => {
-            println!("upstream document isn't available {:?}", doc);
-            return Response::builder().status(500).body(Body::from("failed to call upstream api")).unwrap();
-        },
-    };
-    let doc = match doc {
-        tl::enums::Document::Document(document) => document,
-        _ => {
-            println!("upstream document isn't document {:?}", doc);
-            return Response::builder().status(500).body(Body::from("failed to call upstream api")).unwrap();
-        }
-    };
-
-    let file_ref = FileRefV1 {
-        message_id: res.id,
-        document_id: doc.id,
-        file_reference: doc.file_reference.clone(),
-        access_hash: doc.access_hash,
-        file_size: doc.size,
-    };
-
-    let file_ref = FileRef {
-        v1: Some(file_ref),
-    };
-
-    let file_ref = file_ref.encode_to_vec();
-    let file_ref = base64::prelude::BASE64_URL_SAFE_NO_PAD.encode(file_ref);
 
     let res = UploadFinalizeResponse {
-        r#ref: file_ref,
+        r#ref: file_ref.to_ref_string(),
     };
     
     Response::builder()

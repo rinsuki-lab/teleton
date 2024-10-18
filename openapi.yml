@@ -103,21 +103,21 @@ paths:
                 properties:
                   ref:
                     type: string
-  /v1/chunk:
+  /v1/chunk/{ref}/{offset}:
     get:
       tags: [chunk]
       operationId: fetchChunkV1
       summary: Acquire Chunk
       parameters:
       - name: ref
-        in: query
+        in: path
         required: true
         schema:
           type: string
       - name: offset
-        in: query
+        in: path
         required: true
-        description: should be divisible by 4096
+        description: should be divisible by 524288
         schema:
           type: integer
       responses:

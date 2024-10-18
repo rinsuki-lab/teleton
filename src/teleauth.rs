@@ -1,4 +1,4 @@
-use std::{cmp::max, time::Duration};
+use std::time::Duration;
 
 use grammers_client::{grammers_tl_types as tl, session::Session, Client, Config, InitParams, ReconnectionPolicy};
 
@@ -7,7 +7,9 @@ struct ReConPolicy;
 impl ReconnectionPolicy for ReConPolicy {
     fn should_retry(&self, attempts: usize) -> std::ops::ControlFlow<(), std::time::Duration> {
         let duration = u64::pow(2, attempts as _) + 100;
-        let duration = max(duration, 60 * 1000 * 1000);
+        if duration > 15 * 1000 {
+            return std::ops::ControlFlow::Break(())
+        }
         std::ops::ControlFlow::Continue(Duration::from_millis(duration))
     }
 }
