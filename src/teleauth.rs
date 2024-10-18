@@ -1,4 +1,16 @@
-use grammers_client::{session::Session, Client, Config, InitParams, grammers_tl_types as tl};
+use std::{cmp::max, time::Duration};
+
+use grammers_client::{grammers_tl_types as tl, session::Session, Client, Config, InitParams, ReconnectionPolicy};
+
+struct ReConPolicy;
+
+impl ReconnectionPolicy for ReConPolicy {
+    fn should_retry(&self, attempts: usize) -> std::ops::ControlFlow<(), std::time::Duration> {
+        let duration = u64::pow(2, attempts as _) + 100;
+        let duration = max(duration, 60 * 1000 * 1000);
+        std::ops::ControlFlow::Continue(Duration::from_millis(duration))
+    }
+}
 
 pub async fn get_authorized_client() -> Client {
     let session_path = std::env::var("TELETON_SESSION_PATH").expect("TELETON_SESSION_PATH is not specified");
@@ -16,6 +28,7 @@ pub async fn get_authorized_client() -> Client {
         api_hash: api_hash.clone(),
         params: InitParams {
             proxy_url: proxy_url.clone(),
+            reconnection_policy: &ReConPolicy,
             ..Default::default()
         },
     };
@@ -103,6 +116,7 @@ pub async fn get_authorized_client() -> Client {
                     api_hash: api_hash.clone(),
                     params: InitParams {
                         proxy_url: proxy_url.clone(),
+                        reconnection_policy: &ReConPolicy,
                         server_addr: Some(format!("{}:{}", good_server.ip_address, good_server.port).parse().expect("Failed to parse DC ip address")),
                         ..Default::default()
                     },
